@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organisation {
+  id        String   @id @default(cuid())
+  nom       String
+  email     String   @unique
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  zones     Zone[]
+}
+
+model Zone {
+  id             String       @id @default(cuid())
+  nom            String
+  description    String?
+  latitude       Float
+  longitude      Float
+  radiusKm       Float        @default(25)
+  langue         String       @default("fr")
+  cultures       String[]
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  agriculteurs   Agriculteur[]
+  previsions     Prevision[]
+  alertes        Alerte[]
+  createdAt      DateTime     @default(now())
+}
+
+model Agriculteur {
+  id        String   @id @default(cuid())
+  nom       String
+  telephone String
+  langue    String   @default("fr")
+  zoneId    String
+  zone      Zone     @relation(fields: [zoneId], references: [id])
+  alertes   Alerte[]
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Prevision {
+  id          String   @id @default(cuid())
+  zoneId      String
+  zone        Zone     @relation(fields: [zoneId], references: [id])
+  type        String
+  periode     String
+  categorie   String
+  probabilite Float
+  details     Json
+  source      String
+  createdAt   DateTime @default(now())
+}
+
+model Alerte {
+  id            String       @id @default(cuid())
+  zoneId        String
+  zone          Zone         @relation(fields: [zoneId], references: [id])
+  agriculteurId String?
+  agriculteur   Agriculteur? @relation(fields: [agriculteurId], references: [id])
+  type          String
+  messageFr     String
+  messageLocal  String
+  langue        String
+  statutSMS     String       @default("pending")
+  envoyes       Int          @default(0)
+  echoues       Int          @default(0)
+  createdAt     DateTime     @default(now())
+}
+
+
+model PipelineRun {
+  id             String   @id @default(cuid())
+  jobName        String
+  outcome        String
+  refreshedCount Int      @default(0)
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([jobName, createdAt])
+}
