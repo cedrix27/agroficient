@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -141,7 +142,11 @@ def main() -> None:
     parser.add_argument('--start-year', type=int, default=2014)
     parser.add_argument('--end-year', type=int, default=2025)
     parser.add_argument('--seasons', default='JAS,OND,MAM')
+    parser.add_argument('--ee-project-id', default='')
     args = parser.parse_args()
+
+    if args.ee_project_id:
+        os.environ['EE_PROJECT_ID'] = args.ee_project_id
 
     capitals = Path(args.capitals_geojson)
     if not capitals.exists():
@@ -176,6 +181,12 @@ def main() -> None:
         for row in iter_rows(cities, years, season_codes):
             w.writerow(row)
             n += 1
+
+    if n == 0:
+        raise RuntimeError(
+            "Dataset vide (0 lignes). Verifie Earth Engine auth + project. "
+            "Exemple: --ee-project-id youtub-486403"
+        )
 
     print(f"Done. rows={n}, cities={len(cities)}, output={out}")
 
